@@ -1,0 +1,43 @@
+# 🔬 AI Research Assistant Agent 
+
+A lightweight, high-performance AI Research Assistant designed for college hackathons. It leverages real-time web search, LLM reasoning, and a clean, interactive user interface to synthesize multi-source research into structured executive summaries and key findings.
+
+---
+
+## 🚀 Key Features
+
+1. **Multi-Source Live Search:** Fetches real-time web data using the Tavily Search API with automatic current-date injection.
+2. **Structured Insights:** Breaks down information into crisp **Executive Summary Points** and **Key Findings** to avoid messy long paragraphs.
+3. **Context-Aware Follow-ups:** Retains conversational history to handle multi-turn research queries smoothly.
+4. **Interactive Query Editing:** Easily modify past queries using built-in edit options to refine research dynamically.
+5. **Clean Streamlit UI:** Fully optimized user experience with an intuitive sidebar history and clear chat capabilities.
+6. **Robust Validation:** Uses Pydantic models to guarantee strict, error-free JSON outputs from the LLM.
+
+---
+
+## ⚙️ Tech Stack
+
+* **Frontend:** Streamlit (`frontend/app.py`)
+* **Backend:** FastAPI (`main.py`, `backend/agent_logic.py`)
+* **AI Model:** Groq LLM (`qwen/qwen3.8-27b`)
+* **Search Engine:** Tavily Search API
+* **Data Validation:** Pydantic (`backend/models.py`)
+
+---
+
+## 📁 Project Structure
+
+```text
+news_research_agent/
+│
+├── backend/
+│   ├── __init__.py
+│   ├── agent_logic.py    # Core agent processing & LLM orchestration
+│   └── models.py         # Pydantic data schemas (ResearchResult, ResearchSource)
+│
+├── frontend/
+│   └── app.py            # Streamlit user interface & chat management
+│
+├── main.py               # FastAPI backend entry point
+├── requirements.txt      # Project dependencies
+└── .env                  # API keys (Groq & Tavily)
