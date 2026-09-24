@@ -11,7 +11,7 @@ load_dotenv()
 tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 groq = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-def run_research_agent(query: str, history: list = None) -> ResearchResult:
+def run_research_agent(query: str, history: list = None):
     web_data = ""
     sources = []
     
@@ -35,10 +35,13 @@ def run_research_agent(query: str, history: list = None) -> ResearchResult:
             ctx += f"Q: {h['query']}\nAns: {h['summary']}\n"
 
     sys_prompt = (
-        "You are a helpful research assistant. "
-        "Read the web data and answer the query. "
-        "Give executive summary in bullet points (executive_summary_points), not in long paragraphs."
+        "You are a specialized AI Research Assistant. Your job is ONLY to answer academic, technical, or research-related queries. "
+        "Check the user query. If the query is off-topic (unrelated to research, science, technology, or studies, like movies, cooking, personal chat, etc.), "
+        "set 'is_relevant' to false, and in 'executive_summary_points' write a polite refusal message like: "
+        "'I am a specialized research assistant. I can only provide information on research and technical topics. Please ask a study or research-related question.' "
+        "If the query is relevant, set 'is_relevant' to true and provide the summary based on the web data in bullet points."
     )
+    
     
     usr_prompt = f"History:\n{ctx}\n\nQuery:\n{query}\n\nData:\n{web_data}"
     schema = ResearchResult.model_json_schema()
