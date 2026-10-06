@@ -1,26 +1,27 @@
 # 🔬 AI Research Assistant Agent 
 
-A lightweight, high-performance AI Research Assistant designed for college hackathons. It leverages real-time web search, LLM reasoning, and a clean, interactive user interface to synthesize multi-source research into structured executive summaries and key findings.
+A professional-grade, high-performance AI Research Assistant designed for deep academic, scientific, and technical research. It leverages LangChain, Groq LLM, real-time web search, SQLite database persistence, and automated PDF report generation wrapped in a clean, executive-style Streamlit UI.
 
 ---
 
 ## 🚀 Key Features
 
-1. **Multi-Source Live Search:** Fetches real-time web data using the Tavily Search API with automatic current-date injection.
-2. **Structured Insights:** Breaks down information into crisp **Executive Summary Points** and **Key Findings** to avoid messy long paragraphs.
-3. **Context-Aware Follow-ups:** Retains conversational history to handle multi-turn research queries smoothly.
-4. **Interactive Query Editing:** Easily modify past queries using built-in edit options to refine research dynamically.
-5. **Clean Streamlit UI:** Fully optimized user experience with an intuitive sidebar history and clear chat capabilities.
-6. **Robust Validation:** Uses Pydantic models to guarantee strict, error-free JSON outputs from the LLM.
+1. **Strict Relevance & Out-of-Domain Enforcement:** Automatically analyzes query context and politely refuses non-academic or off-topic queries (e.g., sports, cooking, gossip) without generating fake sources or reports.
+2. **Multi-Source Live Search & Synthesis:** Fetches real-time web data using search APIs and structures it into crisp **Executive Summary Points** and **Key Findings**.
+3. **Automated PDF Report Generation:** Instantly exports professional-grade, styled executive briefing reports into downloadable PDF documents using ReportLab.
+4. **SQLite-Backed Persistence:** Automatically saves all search queries, structured summaries, key findings, and verified references to a local SQLite database (`research_agent.db`) for history tracking.
+5. **Context-Aware Follow-ups:** Retains conversational history across turns to handle multi-step research queries smoothly.
+6. **Robust Validation:** Uses Pydantic models to guarantee strict, error-free structured JSON outputs from the LLM.
 
 ---
 
 ## ⚙️ Tech Stack
 
-* **Frontend:** Streamlit (`frontend/app.py`)
-* **Backend:** FastAPI (`main.py`, `backend/agent_logic.py`)
-* **AI Model:** Groq LLM (`qwen/qwen3.8-27b`)
-* **Search Engine:** Tavily Search API
+* **Frontend UI:** Streamlit (`frontend/app.py`)
+* **Backend Framework:** FastAPI (`backend/main.py`)
+* **AI Orchestration & LLM:** LangChain & Groq LLM (`llama-3.3-70b-versatile`)
+* **Database & Persistence:** SQLite & SQLAlchemy (`backend/database.py`)
+* **PDF Export:** ReportLab
 * **Data Validation:** Pydantic (`backend/models.py`)
 
 ---
@@ -31,13 +32,16 @@ A lightweight, high-performance AI Research Assistant designed for college hacka
 news_research_agent/
 │
 ├── backend/
-│   ├── __init__.py
-│   ├── agent_logic.py    # Core agent processing & LLM orchestration
+│   ├── agent_logic.py    # Core agent processing, prompts & LLM orchestration
+│   ├── database.py       # SQLite setup, models & session handling
+│   ├── main.py           # FastAPI backend entry point
 │   └── models.py         # Pydantic data schemas (ResearchResult, ResearchSource)
 │
 ├── frontend/
-│   └── app.py            # Streamlit user interface & chat management
+│   └── app.py            # Streamlit user interface, chat management & PDF rendering
 │
-├── main.py               # FastAPI backend entry point
+├── venv/                 # Virtual environment
+├── .env                  # API keys (Groq & Tavily)
+├── .gitignore            # Git ignore file
 ├── requirements.txt      # Project dependencies
-└── .env                  # API keys (Groq & Tavily)
+└── research_agent.db     # SQLite database file

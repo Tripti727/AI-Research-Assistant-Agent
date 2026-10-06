@@ -1,63 +1,62 @@
 import os
-import json
-from datetime import datetime
-from dotenv import load_dotenv
-from groq import Groq
-from tavily import TavilyClient
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
 from backend.models import ResearchResult, ResearchSource
+from dotenv import load_dotenv
 
 load_dotenv()
 
-tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-groq = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-def run_research_agent(query: str, history: list = None):
-    web_data = ""
-    sources = []
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    search_q = f"{query} (Date: {today})"
-    
-    try:
-        resp = tavily.search(query=search_q, max_results=2, include_raw_content=False)
-        for r in resp.get("results", []):
-            t = r.get('title', 'Title')
-            u = r.get('url', '#')
-            c = r.get('content', '')
-            web_data += f"Title: {t}\nURL: {u}\nContent: {c}\n\n"
-            sources.append(ResearchSource(title=t, url=u))
-    except Exception as e:
-        web_data = f"Search failed: {e}"
-    
-    ctx = ""
-    if history:
-        for h in history[-3:]:
-            ctx += f"Q: {h['query']}\nAns: {h['summary']}\n"
-
-    sys_prompt = (
-        "You are a specialized AI Research Assistant. Your job is ONLY to answer academic, technical, or research-related queries. "
-        "Check the user query. If the query is off-topic (unrelated to research, science, technology, or studies, like movies, cooking, personal chat, etc.), "
-        "set 'is_relevant' to false, and in 'executive_summary_points' write a polite refusal message like: "
-        "'I am a specialized research assistant. I can only provide information on research and technical topics. Please ask a study or research-related question.' "
-        "If the query is relevant, set 'is_relevant' to true and provide the summary based on the web data in bullet points."
-    )
-    
-    
-    usr_prompt = f"History:\n{ctx}\n\nQuery:\n{query}\n\nData:\n{web_data}"
-    schema = ResearchResult.model_json_schema()
-
-    response = groq.chat.completions.create(
+def run_research_agent(query: str, history: list = None) -> ResearchResult:
+    # Initialize Groq LLM
+    llm = ChatGroq(
         model="qwen/qwen3.8-27b",
-        messages=[
-            {"role": "system", "content": sys_prompt + f"\nOutput JSON matching:\n{json.dumps(schema)}"},
-            {"role": "user", "content": usr_prompt}
-        ],
-        temperature=0.3,
-        max_tokens=800,
-        response_format={"type": "json_object"}
+        temperature=0.1,
+        groq_api_key=os.getenv("GROQ_API_KEY")
     )
 
-    data = json.loads(response.choices[0].message.content)
-    data["sources"] = [s.dict() for s in sources]
-    
-    return ResearchResult(**data)
+    # Bind structured output schema to LLM
+    structured_llm = llm.with_structured_output(ResearchResult)
+
+    # System prompt for strict relevance checking
+    system_prompt = """You are an advanced AI Research Assistant agent. Your job is to conduct deep research on technical, academic, scientific, or professional topics.
+
+CRITICAL INSTRUCTION ON RELEVANCE:
+- Analyze the user's query carefully.
+- If the query is completely unrelated to research, science, technology, academic domains, engineering, business analysis, or professional studies (e.g., queries about cooking recipes, sports match live scores, movies, entertainment, personal gossip, casual chit-chat, or random non-academic questions), you MUST set `is_relevant` to `false`.
+- If `is_relevant` is `false`, leave `executive_summary_points`, `key_findings`, and `sources` completely empty, and set `topic` to "Irrelevant Query / Out of Domain".
+- Only if the query is a valid research/technical/academic topic, set `is_relevant` to `true`, perform a web search if needed, and fill out the detailed executive summary points, key findings, and verified sources.
+
+Past Conversation Context:
+{history}
+"""
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{query}")
+    ])
+
+    chain = prompt | structured_llm
+
+    # Format past conversation history
+    formatted_history = ""
+    if history:
+        for h in history:
+            formatted_history += f"User Query: {h['query']}\nSummary: {h['summary']}\n---\n"
+    else:
+        formatted_history = "No previous history."
+
+    # Execute the agent chain
+    try:
+        result = chain.invoke({
+            "history": formatted_history,
+            "query": query
+        })
+        return result
+    except Exception as e:
+        return ResearchResult(
+            is_relevant=False,
+            topic="Error Processing Query",
+            executive_summary_points=[f"An error occurred: {str(e)}"],
+            key_findings=[],
+            sources=[]
+        )

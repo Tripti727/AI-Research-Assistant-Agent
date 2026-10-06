@@ -15,8 +15,9 @@ class ResearchHistoryModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     query = Column(String, index=True)
     topic = Column(String)
-    summary = Column(Text)
-    sources = Column(Text)
+    executive_summary = Column(Text)  # JSON string of summary bullet points
+    key_findings = Column(Text)       # JSON string of key findings bullet points
+    sources = Column(Text)            # JSON string of sources
 
 def init_db():
     Base.metadata.create_all(bind=engine)

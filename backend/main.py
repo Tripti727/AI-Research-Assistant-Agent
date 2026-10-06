@@ -20,21 +20,23 @@ def get_db():
 
 @app.get("/")
 def home():
-    return {"msg": "Server is running with Database integration!"}
+    return {"msg": "Server is running with LangChain & Database integration!"}
 
 @app.post("/research", response_model=ResearchResult)
 def get_research(req: ReqBody, db: Session = Depends(get_db)):
     try:
-        h_list = [{"query": x.query, "summary": x.summary} for x in req.history]
+        h_list = [{"query": x.query, "summary": " ".join(x.summary) if isinstance(x.summary, list) else str(x.summary)} for x in req.history]
         result = run_research_agent(query=req.query, history=h_list)
         
-        summary_text = " ".join(result.executive_summary_points)
+        summary_json = json.dumps(result.executive_summary_points)
+        findings_json = json.dumps(result.key_findings)
         sources_json = json.dumps([s.dict() for s in result.sources])
         
         db_item = ResearchHistoryModel(
             query=req.query,
             topic=result.topic,
-            summary=summary_text,
+            executive_summary=summary_json,
+            key_findings=findings_json,
             sources=sources_json
         )
         db.add(db_item)
